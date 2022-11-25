@@ -1,8 +1,8 @@
 #![feature(test)]
 
 use clap::Parser;
-use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
 mod collatz;
@@ -34,10 +34,11 @@ fn receiver(rx: Receiver<(usize, usize)>) {
 /// Run 3x+1 on start..end and print the results
 fn run(start: usize, end: usize) {
     let (tx, rx): (Sender<(usize, usize)>, Receiver<(usize, usize)>) = mpsc::channel();
-    let receiver_thread = thread::spawn(move || {receiver(rx);});
+    let receiver_thread = thread::spawn(move || {
+        receiver(rx);
+    });
     collatz::solve_mt(collatz::shortcut, start, end, tx);
     receiver_thread.join().unwrap();
-
 }
 
 fn main() {
@@ -58,7 +59,7 @@ fn main() {
     // Run the thing
     let end = match args.count {
         0 => 0,
-        _ => args.start + args.count
+        _ => args.start + args.count,
     };
     run(args.start, end);
 }
