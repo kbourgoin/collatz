@@ -1,5 +1,6 @@
 use std::sync::mpsc::Sender;
 use threadpool::ThreadPool;
+use std::time::{Duration,SystemTime};
 use std::{thread, time};
 
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
@@ -77,20 +78,34 @@ fn solve_mt(
     output_channel: Sender<(usize, usize)>,
     threads: usize,
 ) {
+    let start_time = SystemTime::now();
     let mut num = start;
     let pool = ThreadPool::new(threads);
     while end == 0 || num < end {
-        let output_channel = output_channel.clone();
+        // let output_channel = output_channel.clone();
+        // while pool.queued_count() > 1_000_000_000 {
+        //    println!("sleep");
+        //    thread::sleep(time::Duration::from_millis(500));
+        //}
         pool.execute(move || {
             let result = implementation(num);
             // TODO: Make this configurable or move to receiver.
             // Print every million so we saturate CPU and on I/O
             if num % 1_000_000 == 0 {
-                output_channel.send((num, result)).unwrap();
-            }
+                println!("{:e}: {}", num, result);
+                // output_channel.send((num, result)).unwrap();
+                let duration = start_time.elapsed().unwrap().as_millis();
+                let count = num - start;
+                println!("Solved {} in {}ms ({:.3} solves/s)",
+                         count, duration, count as f32 / duration as f32);
+                        }
         });
         num += 1;
     }
+    let duration = start_time.elapsed().unwrap().as_millis();
+    let count = num - start;
+    println!("Solved {} in {}ms ({:.3} solves/s)",
+             count, duration, count as f32 / duration as f32);
     pool.join();
 }
 
