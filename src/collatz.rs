@@ -1,5 +1,9 @@
 extern crate test;
 
+use std::vec::Vec;
+use std::sync::mpsc::Sender;
+use std::ops::Range;
+
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
 pub fn recursive(num: usize) -> usize {
     fn _recurse(num: usize, count: usize) -> (usize, usize) {
@@ -48,6 +52,14 @@ pub fn shortcut(num: usize) -> usize {
         count += 1;
     }
     return count;
+}
+
+/// Multithreaded implementation of Shortcut
+pub fn solve_mt(implementation: fn(usize) -> usize, start: usize, end: usize, output_channel: Sender<(usize, usize)>) {
+    for num in start..end {
+        let result = implementation(num);
+        output_channel.send((num, result)).unwrap();
+    }
 }
 
 #[cfg(test)]

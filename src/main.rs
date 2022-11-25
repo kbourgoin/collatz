@@ -1,6 +1,9 @@
 #![feature(test)]
 
 use clap::Parser;
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+use std::{thread, time};
 
 mod collatz;
 
@@ -15,7 +18,23 @@ struct Args {
     count: usize,
 }
 
+/// Entry point for output receiver
+fn receiver(rx: Receiver<(usize, usize)>) {
+    while true {
+        let (num, result) = rx.recv().unwrap();
+        println!("{}: {}", num, result);
+    }
+}
+
 fn main() {
+    let (tx, rx): (Sender<(usize, usize)>, Receiver<(usize, usize)>) = mpsc::channel();
+
+    // Start receiver thread
+
+    // Run solver
+    collatz::solve_mt(collatz::shortcut, 1, 10, tx);
+
+    /*
     let args = Args::parse();
     let count_msg: String;
     if args.count == 0 {
@@ -37,4 +56,5 @@ fn main() {
         }
         i += 1;
     }
+    */
 }
