@@ -21,8 +21,11 @@ struct Args {
 /// Entry point for output receiver
 fn receiver(rx: Receiver<(usize, usize)>) {
     while true {
-        let (num, result) = rx.recv().unwrap();
-        println!("{}: {}", num, result);
+        if let Result::Ok((num, result)) = rx.recv() {
+            println!("{}: {}", num, result);
+        } else {
+            return;
+        }
     }
 }
 
@@ -30,9 +33,13 @@ fn main() {
     let (tx, rx): (Sender<(usize, usize)>, Receiver<(usize, usize)>) = mpsc::channel();
 
     // Start receiver thread
+    let receiver_thread = thread::spawn(move || {receiver(rx);});
 
     // Run solver
     collatz::solve_mt(collatz::shortcut, 1, 10, tx);
+
+    // Let it wrap up before exiting
+    receiver_thread.join();
 
     /*
     let args = Args::parse();
