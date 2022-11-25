@@ -1,4 +1,5 @@
 use std::sync::mpsc::Sender;
+use std::vec::Vec;
 use threadpool::ThreadPool;
 use std::time::{Duration,SystemTime};
 use std::{thread, time};
@@ -81,25 +82,35 @@ fn solve_mt(
     let start_time = SystemTime::now();
     let mut num = start;
     let pool = ThreadPool::new(threads);
+
+    const batch_size: usize = 1000;
+    let mut batch =  Vec::with_capacity(batch_size);
+
     while end == 0 || num < end {
-        // let output_channel = output_channel.clone();
-        // while pool.queued_count() > 1_000_000_000 {
-        //    println!("sleep");
-        //    thread::sleep(time::Duration::from_millis(500));
-        //}
-        pool.execute(move || {
-            let result = implementation(num);
-            // TODO: Make this configurable or move to receiver.
-            // Print every million so we saturate CPU and on I/O
-            if num % 1_000_000 == 0 {
-                println!("{:e}: {}", num, result);
-                // output_channel.send((num, result)).unwrap();
-                let duration = start_time.elapsed().unwrap().as_millis();
-                let count = num - start;
-                println!("Solved {} in {}ms ({:.3} solves/s)",
-                         count, duration, count as f32 / duration as f32);
-                        }
-        });
+        batch.push(num);
+        if batch.len() == batch_size {
+            // let output_channel = output_channel.clone();
+            while pool.queued_count() > 1_000 {
+               println!("sleep");
+               thread::sleep(time::Duration::from_millis(5));
+            }
+            pool.execute(move || {
+                for num in batch {
+                    let result = implementation(num);
+                    // TODO: Make this configurable or move to receiver.
+                    // Print every million so we saturate CPU and on I/O
+                    if num % 10_000_000 == 0 {
+                        println!("{:e}: {}", num, result);
+                        // output_channel.send((num, result)).unwrap();
+                        let duration = start_time.elapsed().unwrap().as_millis();
+                        let count = num - start;
+                        println!("Solved {} in {}ms ({:.3} solves/s)",
+                                 count, duration, count as f32 / duration as f32);
+                                }
+                }
+            });
+            batch = Vec::with_capacity(batch_size);
+        }
         num += 1;
     }
     let duration = start_time.elapsed().unwrap().as_millis();
