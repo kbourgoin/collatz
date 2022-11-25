@@ -1,10 +1,10 @@
+
 extern crate test;
 
-use std::vec::Vec;
 use std::sync::mpsc::Sender;
-use std::ops::Range;
 
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
+#[allow(dead_code)]
 pub fn recursive(num: usize) -> usize {
     fn _recurse(num: usize, count: usize) -> (usize, usize) {
         if num == 1 {
@@ -24,6 +24,7 @@ pub fn recursive(num: usize) -> usize {
 }
 
 /// Non-recursive implementation of Collatz
+#[allow(dead_code)]
 pub fn naive(num: usize) -> usize {
     let mut count: usize = 0;
     let mut num = num;
@@ -39,6 +40,7 @@ pub fn naive(num: usize) -> usize {
 }
 
 /// Shortcut implementation of Collatz
+#[allow(dead_code)]
 pub fn shortcut(num: usize) -> usize {
     let mut count: usize = 0;
     let mut num = num;
@@ -55,10 +57,17 @@ pub fn shortcut(num: usize) -> usize {
 }
 
 /// Multithreaded implementation of Shortcut
+#[allow(dead_code)]
 pub fn solve_mt(implementation: fn(usize) -> usize, start: usize, end: usize, output_channel: Sender<(usize, usize)>) {
-    for num in start..end {
+    let mut num = start;
+    while end == 0 || num < end {
         let result = implementation(num);
-        output_channel.send((num, result)).unwrap();
+        // TODO: Make this configurable or move to receiver.
+        // Print every million so we saturate CPU and on I/O
+        if num % 1_000_000 == 0 {
+            output_channel.send((num, result)).unwrap();
+        }
+        num += 1;
     }
 }
 

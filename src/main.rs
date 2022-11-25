@@ -3,9 +3,11 @@
 use clap::Parser;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
-use std::{thread, time};
+use std::thread;
 
 mod collatz;
+
+// TODO: Fix 0 as a magic number to run forever
 
 /// collatz -- run the 3x+1 problem
 #[derive(Parser)]
@@ -20,29 +22,28 @@ struct Args {
 
 /// Entry point for output receiver
 fn receiver(rx: Receiver<(usize, usize)>) {
-    while true {
+    loop {
         if let Result::Ok((num, result)) = rx.recv() {
-            println!("{}: {}", num, result);
+            println!("{:e}: {}", num, result);
         } else {
             return;
         }
     }
 }
 
-fn main() {
+/// Run 3x+1 on start..end and print the results
+fn run(start: usize, end: usize) {
     let (tx, rx): (Sender<(usize, usize)>, Receiver<(usize, usize)>) = mpsc::channel();
-
-    // Start receiver thread
     let receiver_thread = thread::spawn(move || {receiver(rx);});
+    collatz::solve_mt(collatz::shortcut, start, end, tx);
+    receiver_thread.join().unwrap();
 
-    // Run solver
-    collatz::solve_mt(collatz::shortcut, 1, 10, tx);
+}
 
-    // Let it wrap up before exiting
-    receiver_thread.join();
-
-    /*
+fn main() {
     let args = Args::parse();
+
+    // Print message about what's about to go down
     let count_msg: String;
     if args.count == 0 {
         count_msg = "all".to_string();
@@ -54,14 +55,10 @@ fn main() {
         count_msg, args.start
     );
 
-    let mut i = 0;
-    while args.count == 0 || i < args.count {
-        let result = collatz::shortcut(args.start + i);
-        // Print every million so we saturate CPU
-        if (i + 1) % 1_000_000 == 0 {
-            println!("{:e}: {}", args.start + i, result);
-        }
-        i += 1;
-    }
-    */
+    // Run the thing
+    let end = match args.count {
+        0 => 0,
+        _ => args.start + args.count
+    };
+    run(args.start, end);
 }
