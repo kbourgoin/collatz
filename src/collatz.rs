@@ -1,6 +1,6 @@
-extern crate test;
-
 use std::sync::mpsc::Sender;
+use threadpool::ThreadPool;
+use std::{thread, time};
 
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
 #[allow(dead_code)]
@@ -77,7 +77,21 @@ fn solve_mt(
     output_channel: Sender<(usize, usize)>,
     threads: usize,
 ) {
-    println!("Coming soon!");
+    let mut num = start;
+    let pool = ThreadPool::new(threads);
+    while end == 0 || num < end {
+        let output_channel = output_channel.clone();
+        pool.execute(move || {
+            let result = implementation(num);
+            // TODO: Make this configurable or move to receiver.
+            // Print every million so we saturate CPU and on I/O
+            if num % 1_000_000 == 0 {
+                output_channel.send((num, result)).unwrap();
+            }
+        });
+        num += 1;
+    }
+    pool.join();
 }
 
 fn solve_st(
