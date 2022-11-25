@@ -69,8 +69,8 @@ mod tests {
         }
     }
 
-    fn test_performance(f: fn(usize) -> usize) {
-        for n in 1..5000 {
+    fn test_performance(f: fn(usize) -> usize, start: usize, end: usize) {
+        for n in start..end {
             f(n);
         }
     }
@@ -80,9 +80,25 @@ mod tests {
         test_is_correct(recursive);
     }
 
+    /// Recursive impl benchmark (1..5000)
     #[bench]
-    fn bench_recursive(b: &mut Bencher) {
-        b.iter(|| test_performance(recursive));
+    fn small_bench_recursive(b: &mut Bencher) {
+        let start = 1;
+        b.iter(|| test_performance(recursive, start, start+5000));
+    }
+
+    /// Recursive impl benchmark (1,000,000..1,005,000)
+    #[bench]
+    fn mid_bench_recursive(b: &mut Bencher) {
+        let start = 1_000_000;
+        b.iter(|| test_performance(recursive, start, start+5000));
+    }
+
+    /// Recursive impl benchmark (1,000,000,000..1,000,005,000)
+    #[bench]
+    fn big_bench_recursive(b: &mut Bencher) {
+        let start = 1_000_000_000;
+        b.iter(|| test_performance(recursive, start, start+5000));
     }
 
     #[test]
@@ -90,9 +106,25 @@ mod tests {
         test_is_correct(naive);
     }
 
+    /// Naive impl benchmark (1..5000)
     #[bench]
-    fn bench_naive(b: &mut Bencher) {
-        b.iter(|| test_performance(naive));
+    fn small_bench_naive(b: &mut Bencher) {
+        let start = 1;
+        b.iter(|| test_performance(naive, start, start+5000));
+    }
+
+    /// Naive impl benchmark (1,000,000..1,005,000)
+    #[bench]
+    fn mid_bench_naive(b: &mut Bencher) {
+        let start = 1_000_000;
+        b.iter(|| test_performance(naive, start, start+5000));
+    }
+
+    /// Naive impl benchmark (1,000,000,000..1,000,005,000)
+    #[bench]
+    fn big_bench_naive(b: &mut Bencher) {
+        let start = 1_000_000_000;
+        b.iter(|| test_performance(naive, start, start+5000));
     }
 
     #[test]
@@ -101,8 +133,24 @@ mod tests {
         test_is_correct(shortcut);
     }
 
+    /// Shortcut impl benchmark (1..5000)
     #[bench]
-    fn bench_shortcut(b: &mut Bencher) {
-        b.iter(|| test_performance(shortcut));
+    fn small_bench_shortcut(b: &mut Bencher) {
+        let start = 1;
+        b.iter(|| test_performance(shortcut, start, start+5000));
+    }
+
+    /// Shortcut impl benchmark (1,000,000..1,005,000)
+    #[bench]
+    fn mid_bench_shortcut(b: &mut Bencher) {
+        let start = 1_000_000;
+        b.iter(|| test_performance(shortcut, start, start+5000));
+    }
+
+    /// Shortcut impl benchmark (1,000,000,000..1,000,005,000)
+    #[bench]
+    fn big_bench_shortcut(b: &mut Bencher) {
+        let start = 1_000_000_000;
+        b.iter(|| test_performance(shortcut, start, start+5000));
     }
 }
