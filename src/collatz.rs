@@ -55,14 +55,38 @@ pub fn shortcut(num: usize) -> usize {
     return count;
 }
 
-/// Multithreaded implementation of Shortcut
+/// Solver entry point
 #[allow(dead_code)]
-pub fn solve_mt(
+pub fn solve(
+    implementation: fn(usize) -> usize,
+    start: usize,
+    end: usize,
+    output_channel: Sender<(usize, usize)>,
+    threads: usize,
+) {
+    match threads {
+        1 => solve_st(implementation, start, end, output_channel),
+        _ => solve_mt(implementation, start, end, output_channel, threads),
+    }
+}
+
+fn solve_mt(
+    implementation: fn(usize) -> usize,
+    start: usize,
+    end: usize,
+    output_channel: Sender<(usize, usize)>,
+    threads: usize,
+) {
+    println!("Coming soon!");
+}
+
+fn solve_st(
     implementation: fn(usize) -> usize,
     start: usize,
     end: usize,
     output_channel: Sender<(usize, usize)>,
 ) {
+    // Simpler single-threaded version
     let mut num = start;
     while end == 0 || num < end {
         let result = implementation(num);

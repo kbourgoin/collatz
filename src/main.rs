@@ -18,6 +18,9 @@ struct Args {
     /// Run for i numbers (0 runs forever)
     #[clap(short, long, default_value_t = 0)]
     count: usize,
+    /// How many threads to use
+    #[clap(short, long, default_value_t = 1)]
+    threads: usize,
 }
 
 /// Entry point for output receiver
@@ -32,12 +35,12 @@ fn receiver(rx: Receiver<(usize, usize)>) {
 }
 
 /// Run 3x+1 on start..end and print the results
-fn run(start: usize, end: usize) {
+fn run(start: usize, end: usize, threads: usize) {
     let (tx, rx): (Sender<(usize, usize)>, Receiver<(usize, usize)>) = mpsc::channel();
     let receiver_thread = thread::spawn(move || {
         receiver(rx);
     });
-    collatz::solve_mt(collatz::shortcut, start, end, tx);
+    collatz::solve(collatz::shortcut, start, end, tx, threads);
     receiver_thread.join().unwrap();
 }
 
@@ -51,9 +54,15 @@ fn main() {
     } else {
         count_msg = format!("{}", args.count);
     }
+    let threads_msg: String;
+    if args.threads == 1 {
+        threads_msg = "single-threaded".to_string();
+    } else {
+        threads_msg = format!("using {} threads", args.threads);
+    }
     println!(
-        "Running for {} numbers starting at {}",
-        count_msg, args.start
+        "Running for {} numbers starting at {}, {}",
+        count_msg, args.start, threads_msg,
     );
 
     // Run the thing
@@ -61,5 +70,5 @@ fn main() {
         0 => 0,
         _ => args.start + args.count,
     };
-    run(args.start, end);
+    run(args.start, end, args.threads);
 }
