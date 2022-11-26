@@ -83,18 +83,18 @@ fn solve_mt(
     let mut num = start;
     let pool = ThreadPool::new(threads);
 
-    const batch_size: usize = 1000;
+    const BATCH_SIZE: usize = 1000;
 
     while end == 0 || num < end {
         // Make sure we don't explode memory with non-running jobs.
         while pool.queued_count() > threads * 5000 {
-            thread::sleep(time::Duration::from_millis(50));
+            thread::sleep(time::Duration::from_millis(500));
         }
         let batch_end;
         if end == 0 {
-            batch_end = num + batch_size;
+            batch_end = num + BATCH_SIZE;
         } else {
-            batch_end = min(num + batch_size, end);
+            batch_end = min(num + BATCH_SIZE, end);
         }
         // let output_channel = output_channel.clone();
         pool.execute(move || {
@@ -103,7 +103,7 @@ fn solve_mt(
                 // TODO: Make this configurable or move to receiver.
                 // Print every million to saturate CPU and not I/O
                 let solved = num + 1 - start;
-                if solved % 10_000_000 == 0 {
+                if solved % 20_000_000 == 0 {
                     println!("{:e}: {}", num, result);
                     // output_channel.send((num, result)).unwrap();
                     let duration = start_time.elapsed().unwrap().as_millis();
@@ -119,6 +119,16 @@ fn solve_mt(
         num = batch_end;
     }
     pool.join();
+    /*
+    let duration = start_time.elapsed().unwrap().as_millis();
+    let solved = num - start;
+    println!(
+        "Solved {} in {}ms ({:.3} solves/s)",
+        solved,
+        duration,
+        solved as f32 / duration as f32
+    );
+    */
 }
 
 fn solve_st(
