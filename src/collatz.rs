@@ -1,8 +1,8 @@
+use std::cmp::min;
 use std::sync::mpsc::Sender;
-use std::vec::Vec;
-use threadpool::ThreadPool;
-use std::time::{Duration,SystemTime};
+use std::time::{Duration, SystemTime};
 use std::{thread, time};
+use threadpool::ThreadPool;
 
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
 #[allow(dead_code)]
@@ -84,40 +84,44 @@ fn solve_mt(
     let pool = ThreadPool::new(threads);
 
     const batch_size: usize = 1000;
-    let mut batch =  Vec::with_capacity(batch_size);
 
     while end == 0 || num < end {
-        batch.push(num);
-        if batch.len() == batch_size {
-            // let output_channel = output_channel.clone();
-            while pool.queued_count() > 1_000 {
-               println!("sleep");
-               thread::sleep(time::Duration::from_millis(5));
-            }
-            pool.execute(move || {
-                for num in batch {
-                    let result = implementation(num);
-                    // TODO: Make this configurable or move to receiver.
-                    // Print every million so we saturate CPU and on I/O
-                    if num % 10_000_000 == 0 {
-                        println!("{:e}: {}", num, result);
-                        // output_channel.send((num, result)).unwrap();
-                        let duration = start_time.elapsed().unwrap().as_millis();
-                        let count = num - start;
-                        println!("Solved {} in {}ms ({:.3} solves/s)",
-                                 count, duration, count as f32 / duration as f32);
-                                }
-                }
-            });
-            batch = Vec::with_capacity(batch_size);
+        // Make sure we don't explode memory with non-running jobs.
+        while pool.queued_count() > threads * 5000 {
+            thread::sleep(time::Duration::from_millis(50));
         }
-        num += 1;
+        let batch_end = min(num + batch_size, end);
+        // let output_channel = output_channel.clone();
+        pool.execute(move || {
+            for num in num..batch_end {
+                let result = implementation(num);
+                // TODO: Make this configurable or move to receiver.
+                // Print every million to saturate CPU and not I/O
+                let solved = num + 1 - start;
+                if solved % 10_000_000 == 0 {
+                    println!("{:e}: {}", num, result);
+                    // output_channel.send((num, result)).unwrap();
+                    let duration = start_time.elapsed().unwrap().as_millis();
+                    println!(
+                        "Solved {} in {}ms ({:.3} solves/s)",
+                        solved,
+                        duration,
+                        solved as f32 / duration as f32
+                    );
+                }
+            }
+        });
+        num = batch_end;
     }
-    let duration = start_time.elapsed().unwrap().as_millis();
-    let count = num - start;
-    println!("Solved {} in {}ms ({:.3} solves/s)",
-             count, duration, count as f32 / duration as f32);
     pool.join();
+    let duration = start_time.elapsed().unwrap().as_millis();
+    let solved = num - start;
+    println!(
+        "Solvea {} in {}ms ({:.3} solves/s)",
+        solved,
+        duration,
+        solved as f32 / duration as f32
+    );
 }
 
 fn solve_st(
