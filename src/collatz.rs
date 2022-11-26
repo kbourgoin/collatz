@@ -114,14 +114,6 @@ fn solve_mt(
         num = batch_end;
     }
     pool.join();
-    let duration = start_time.elapsed().unwrap().as_millis();
-    let solved = num - start;
-    println!(
-        "Solvea {} in {}ms ({:.3} solves/s)",
-        solved,
-        duration,
-        solved as f32 / duration as f32
-    );
 }
 
 fn solve_st(
