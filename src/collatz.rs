@@ -90,7 +90,12 @@ fn solve_mt(
         while pool.queued_count() > threads * 5000 {
             thread::sleep(time::Duration::from_millis(50));
         }
-        let batch_end = min(num + batch_size, end);
+        let batch_end;
+        if end == 0 {
+            batch_end = num + batch_size;
+        } else {
+            batch_end = min(num + batch_size, end);
+        }
         // let output_channel = output_channel.clone();
         pool.execute(move || {
             for num in num..batch_end {
