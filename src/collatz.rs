@@ -76,19 +76,6 @@ pub fn solve(
     output_channel: Sender<BatchSummary>,
     threads: usize,
 ) {
-    match threads {
-        1 => solve_st(implementation, start, end, output_channel),
-        _ => solve_mt(implementation, start, end, output_channel, threads),
-    }
-}
-
-fn solve_mt(
-    implementation: fn(usize) -> usize,
-    start: usize,
-    end: usize,
-    output_channel: Sender<BatchSummary>,
-    threads: usize,
-) {
     let start_time = SystemTime::now();
     let mut num = start;
     let pool = ThreadPool::new(threads);
@@ -131,27 +118,6 @@ fn solve_mt(
         solved as f32 / duration as f32
     );
     */
-}
-
-fn solve_st(
-    implementation: fn(usize) -> usize,
-    start: usize,
-    end: usize,
-    output_channel: Sender<BatchSummary>,
-) {
-    // Simpler single-threaded version
-    let mut num = start;
-    while end == 0 || num < end {
-        let result = implementation(num);
-        // TODO: Make this configurable or move to receiver.
-        // Print every million so we saturate CPU and on I/O
-        /*
-        if num % 1_000_000 == 0 {
-            output_channel.send((num, result)).unwrap();
-        }
-        */
-        num += 1;
-    }
 }
 
 #[cfg(test)]
