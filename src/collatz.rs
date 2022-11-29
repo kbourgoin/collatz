@@ -69,12 +69,7 @@ pub fn shortcut(num: usize) -> usize {
 }
 
 /// Solver entry point
-pub fn solve(
-    start: usize,
-    end: usize,
-    output_channel: Sender<BatchSummary>,
-    threads: usize,
-) {
+pub fn solve(start: usize, end: usize, output_channel: Sender<BatchSummary>, threads: usize) {
     let mut batch_start = start;
     let pool = ThreadPool::new(threads);
 
@@ -88,7 +83,7 @@ pub fn solve(
 
         let batch_end = match end {
             0 => batch_start + BATCH_SIZE,
-            _ =>min(batch_start + BATCH_SIZE, end),
+            _ => min(batch_start + BATCH_SIZE, end),
         };
         let output_channel = output_channel.clone();
         pool.execute(move || {
@@ -97,12 +92,14 @@ pub fn solve(
                 let result = shortcut(num);
             }
             // Send a completion summary to the output channel
-            output_channel.send(BatchSummary {
-                start: batch_start,
-                end: batch_end,
-                start_time: start_time,
-                end_time: SystemTime::now(),
-            }).expect("channel broken!");
+            output_channel
+                .send(BatchSummary {
+                    start: batch_start,
+                    end: batch_end,
+                    start_time: start_time,
+                    end_time: SystemTime::now(),
+                })
+                .expect("channel broken!");
         });
         batch_start = batch_end;
     }
@@ -122,9 +119,9 @@ pub fn solve(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::Bencher;
     use std::sync::mpsc;
     use std::sync::mpsc::{Receiver, Sender};
+    use test::Bencher;
 
     static SOLVES: &'static [usize] = &[
         0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7, 7, 15, 15, 10, 23, 10,
@@ -146,7 +143,6 @@ mod tests {
             f(n);
         }
     }
-
 
     #[test]
     fn test_recursive() {
@@ -228,14 +224,10 @@ mod tests {
     }
 
     fn test_solve_performance(start: usize, end: usize, b: &mut Bencher) {
-
         b.iter(|| {
-            let (tx, rx): (
-                Sender<BatchSummary>,
-                Receiver<BatchSummary>,
-            ) = mpsc::channel();
+            let (tx, rx): (Sender<BatchSummary>, Receiver<BatchSummary>) = mpsc::channel();
             solve(start, end, tx, 4)
-            });
+        });
     }
 
     /// Multithreaded solve benchmark starting at 1

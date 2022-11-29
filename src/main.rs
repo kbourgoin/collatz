@@ -3,8 +3,8 @@
 use clap::Parser;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::time::{Duration, SystemTime};
 use std::thread;
+use std::time::{Duration, SystemTime};
 
 mod collatz;
 
@@ -31,20 +31,20 @@ fn receiver(rx: Receiver<collatz::BatchSummary>) {
     loop {
         if let Result::Ok(summary) = rx.recv() {
             let batch_solves = summary.end - summary.start;
-            let batch_dur = summary.end_time.duration_since(summary.start_time).expect("invalid SystemTime");
+            let batch_dur = summary
+                .end_time
+                .duration_since(summary.start_time)
+                .expect("invalid SystemTime");
             let batch_rate = batch_solves as f32 / batch_dur.as_nanos() as f32;
 
             dur += batch_dur;
             solves += batch_solves;
             let rate = solves as f32 / dur.as_nanos() as f32;
 
-            println!("{}\t{:?}\t{:?}\t{:?}\t{:?}",
-                     batch_solves,
-                     batch_dur,
-                     batch_rate,
-                     solves,
-                     rate
-                     );
+            println!(
+                "{}\t{:?}\t{:?}\t{:?}\t{:?}",
+                batch_solves, batch_dur, batch_rate, solves, rate
+            );
             /*
             let solved = num + 1 - start;
             if solved % 20_000_000 == 0 {
