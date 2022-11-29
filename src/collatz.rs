@@ -75,37 +75,36 @@ pub fn solve(
     output_channel: Sender<BatchSummary>,
     threads: usize,
 ) {
-    let mut num = start;
+    let mut batch_start = start;
     let pool = ThreadPool::new(threads);
 
     const BATCH_SIZE: usize = 1000;
 
-    while end == 0 || num < end {
+    while end == 0 || batch_start < end {
         // Don't fill memory with waiting jobs.
         while pool.queued_count() > threads * 5000 {
             thread::sleep(time::Duration::from_millis(500));
         }
-        let batch_end;
-        if end == 0 {
-            batch_end = num + BATCH_SIZE;
-        } else {
-            batch_end = min(num + BATCH_SIZE, end);
-        }
+
+        let batch_end = match end {
+            0 => batch_start + BATCH_SIZE,
+            _ =>min(batch_start + BATCH_SIZE, end),
+        };
         let output_channel = output_channel.clone();
         pool.execute(move || {
             let start_time = SystemTime::now();
-            for num in num..batch_end {
+            for num in batch_start..batch_end {
                 let result = shortcut(num);
             }
             // Send a completion summary to the output channel
             output_channel.send(BatchSummary {
-                start: num,
+                start: batch_start,
                 end: batch_end,
                 start_time: start_time,
                 end_time: SystemTime::now(),
             }).expect("channel broken!");
         });
-        num = batch_end;
+        batch_start = batch_end;
     }
     pool.join();
     /*
