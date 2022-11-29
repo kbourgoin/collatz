@@ -122,6 +122,8 @@ pub fn solve(
 mod tests {
     use super::*;
     use test::Bencher;
+    use std::sync::mpsc;
+    use std::sync::mpsc::{Receiver, Sender};
 
     static SOLVES: &'static [usize] = &[
         0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7, 7, 15, 15, 10, 23, 10,
@@ -129,6 +131,7 @@ mod tests {
         24, 24, 24, 11, 11, 112, 112, 19, 32, 19, 32, 19, 19, 107, 107, 6, 27, 27, 27, 14, 14, 14,
         102, 22,
     ];
+    static TEST_SIZE: usize = 5000;
 
     fn test_is_correct(f: fn(usize) -> usize) {
         for i in 0..SOLVES.len() {
@@ -143,30 +146,31 @@ mod tests {
         }
     }
 
+
     #[test]
     fn test_recursive() {
         test_is_correct(recursive);
     }
 
-    /// Recursive impl benchmark (1..5000)
+    /// Recursive impl benchmark starting at 1
     #[bench]
     fn bench_recursive_small(b: &mut Bencher) {
         let start = 1;
-        b.iter(|| test_performance(recursive, start, start + 5000));
+        b.iter(|| test_performance(recursive, start, start + TEST_SIZE));
     }
 
-    /// Recursive impl benchmark (1,000,000..1,005,000)
+    /// Recursive impl benchmark starting at 1,000,000
     #[bench]
     fn bench_recursive_mid(b: &mut Bencher) {
         let start = 1_000_000;
-        b.iter(|| test_performance(recursive, start, start + 5000));
+        b.iter(|| test_performance(recursive, start, start + TEST_SIZE));
     }
 
-    /// Recursive impl benchmark (1,000,000,000..1,000,005,000)
+    /// Recursive impl benchmark starting at 1,000,000,000
     #[bench]
     fn bench_recursive_big(b: &mut Bencher) {
         let start = 1_000_000_000;
-        b.iter(|| test_performance(recursive, start, start + 5000));
+        b.iter(|| test_performance(recursive, start, start + TEST_SIZE));
     }
 
     #[test]
@@ -174,25 +178,25 @@ mod tests {
         test_is_correct(naive);
     }
 
-    /// Naive impl benchmark (1..5000)
+    /// Naive impl benchmark starting at 1
     #[bench]
     fn bench_naive_small(b: &mut Bencher) {
         let start = 1;
-        b.iter(|| test_performance(naive, start, start + 5000));
+        b.iter(|| test_performance(naive, start, start + TEST_SIZE));
     }
 
-    /// Naive impl benchmark (1,000,000..1,005,000)
+    /// Naive impl benchmark starting at 1,000,000
     #[bench]
     fn bench_naive_mid(b: &mut Bencher) {
         let start = 1_000_000;
-        b.iter(|| test_performance(naive, start, start + 5000));
+        b.iter(|| test_performance(naive, start, start + TEST_SIZE));
     }
 
-    /// Naive impl benchmark (1,000,000,000..1,000,005,000)
+    /// Naive impl benchmark starting at 1,000,000,000
     #[bench]
     fn bench_naive_big(b: &mut Bencher) {
         let start = 1_000_000_000;
-        b.iter(|| test_performance(naive, start, start + 5000));
+        b.iter(|| test_performance(naive, start, start + TEST_SIZE));
     }
 
     #[test]
@@ -201,24 +205,56 @@ mod tests {
         test_is_correct(shortcut);
     }
 
-    /// Shortcut impl benchmark (1..5000)
+    /// Shortcut impl benchmark starting at 1
     #[bench]
     fn bench_shortcut_small(b: &mut Bencher) {
         let start = 1;
-        b.iter(|| test_performance(shortcut, start, start + 5000));
+        b.iter(|| test_performance(shortcut, start, start + TEST_SIZE));
     }
 
-    /// Shortcut impl benchmark (1,000,000..1,005,000)
+    /// Shortcut impl benchmark starting at 1,000,000
     #[bench]
     fn bench_shortcut_mid(b: &mut Bencher) {
         let start = 1_000_000;
-        b.iter(|| test_performance(shortcut, start, start + 5000));
+        b.iter(|| test_performance(shortcut, start, start + TEST_SIZE));
     }
 
-    /// Shortcut impl benchmark (1,000,000,000..1,000,005,000)
+    /// Shortcut impl benchmark starting at 1,000,000,000
     #[bench]
     fn bench_shortcut_big(b: &mut Bencher) {
         let start = 1_000_000_000;
-        b.iter(|| test_performance(shortcut, start, start + 5000));
+        b.iter(|| test_performance(shortcut, start, start + TEST_SIZE));
+    }
+
+    fn test_solve_performance(start: usize, end: usize, b: &mut Bencher) {
+
+        b.iter(|| {
+            let (tx, rx): (
+                Sender<BatchSummary>,
+                Receiver<BatchSummary>,
+            ) = mpsc::channel();
+            solve(start, end, tx, 4)
+            });
+    }
+
+    /// Multithreaded solve benchmark starting at 1
+    #[bench]
+    fn bench_solve_small(b: &mut Bencher) {
+        let start = 1;
+        test_solve_performance(start, start + TEST_SIZE, b);
+    }
+
+    /// Multithreaded solve benchmark starting at 1,000,000
+    #[bench]
+    fn bench_solve_mid(b: &mut Bencher) {
+        let start = 1_000_000;
+        test_solve_performance(start, start + TEST_SIZE, b);
+    }
+
+    /// Multithreaded solve benchmark (1,000,000,000..1,000,005,000)
+    #[bench]
+    fn bench_solve_big(b: &mut Bencher) {
+        let start = 1_000_000_000;
+        test_solve_performance(start, start + TEST_SIZE, b);
     }
 }
