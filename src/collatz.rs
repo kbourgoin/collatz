@@ -6,6 +6,14 @@ use std::time::{Duration, SystemTime};
 use std::{thread, time};
 use threadpool::ThreadPool;
 
+/// Summary of solving a batch of 3x+1 numbers
+pub struct BatchSummary {
+    /// Starting number
+    pub start: usize,
+    pub end: usize,
+    pub duration: Duration,
+}
+
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
 #[allow(dead_code)]
 pub fn recursive(num: usize) -> usize {
@@ -65,7 +73,7 @@ pub fn solve(
     implementation: fn(usize) -> usize,
     start: usize,
     end: usize,
-    output_channel: Sender<(usize, usize)>,
+    output_channel: Sender<BatchSummary>,
     threads: usize,
 ) {
     match threads {
@@ -78,7 +86,7 @@ fn solve_mt(
     implementation: fn(usize) -> usize,
     start: usize,
     end: usize,
-    output_channel: Sender<(usize, usize)>,
+    output_channel: Sender<BatchSummary>,
     threads: usize,
 ) {
     let start_time = SystemTime::now();
@@ -98,25 +106,17 @@ fn solve_mt(
         } else {
             batch_end = min(num + BATCH_SIZE, end);
         }
-        // let output_channel = output_channel.clone();
+        let output_channel = output_channel.clone();
         pool.execute(move || {
             for num in num..batch_end {
                 let result = implementation(num);
-                // TODO: Make this configurable or move to receiver.
-                // Print every million to saturate CPU and not I/O
-                let solved = num + 1 - start;
-                if solved % 20_000_000 == 0 {
-                    println!("{:e}: {}", num, result);
-                    // output_channel.send((num, result)).unwrap();
-                    let duration = start_time.elapsed().unwrap().as_millis();
-                    println!(
-                        "Solved {} in {}ms ({:.3} solves/s)",
-                        solved,
-                        duration,
-                        solved as f32 / duration as f32
-                    );
-                }
             }
+            // Send a completion summary to the output channel
+            output_channel.send(BatchSummary {
+                start: num,
+                end: batch_end,
+                duration: start_time.elapsed().unwrap(),
+            });
         });
         num = batch_end;
     }
@@ -137,7 +137,7 @@ fn solve_st(
     implementation: fn(usize) -> usize,
     start: usize,
     end: usize,
-    output_channel: Sender<(usize, usize)>,
+    output_channel: Sender<BatchSummary>,
 ) {
     // Simpler single-threaded version
     let mut num = start;
@@ -145,9 +145,11 @@ fn solve_st(
         let result = implementation(num);
         // TODO: Make this configurable or move to receiver.
         // Print every million so we saturate CPU and on I/O
+        /*
         if num % 1_000_000 == 0 {
             output_channel.send((num, result)).unwrap();
         }
+        */
         num += 1;
     }
 }

@@ -24,10 +24,22 @@ struct Args {
 }
 
 /// Entry point for output receiver
-fn receiver(rx: Receiver<(usize, usize)>) {
+fn receiver(rx: Receiver<collatz::BatchSummary>) {
     loop {
-        if let Result::Ok((num, result)) = rx.recv() {
-            println!("{:e}: {}", num, result);
+        if let Result::Ok(summary) = rx.recv() {
+            println!("{:?}", summary.duration);
+            /*
+            let solved = num + 1 - start;
+            if solved % 20_000_000 == 0 {
+                println!("{:e}: {}", num, result);
+                // output_channel.send((num, result)).unwrap();
+                println!(
+                    "Solved {} in {}ms ({:.3} solves/s)",
+                    solved,
+                    duration,
+                    solved as f32 / duration as f32
+                );
+            */
         } else {
             return;
         }
@@ -36,7 +48,10 @@ fn receiver(rx: Receiver<(usize, usize)>) {
 
 /// Run 3x+1 on start..end and print the results
 fn run(start: usize, end: usize, threads: usize) {
-    let (tx, rx): (Sender<(usize, usize)>, Receiver<(usize, usize)>) = mpsc::channel();
+    let (tx, rx): (
+        Sender<collatz::BatchSummary>,
+        Receiver<collatz::BatchSummary>,
+    ) = mpsc::channel();
     let receiver_thread = thread::spawn(move || {
         receiver(rx);
     });
