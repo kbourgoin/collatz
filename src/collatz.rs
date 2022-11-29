@@ -11,7 +11,8 @@ pub struct BatchSummary {
     /// Starting number
     pub start: usize,
     pub end: usize,
-    pub duration: Duration,
+    pub start_time: SystemTime,
+    pub end_time: SystemTime,
 }
 
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
@@ -74,7 +75,6 @@ pub fn solve(
     output_channel: Sender<BatchSummary>,
     threads: usize,
 ) {
-    let start_time = SystemTime::now();
     let mut num = start;
     let pool = ThreadPool::new(threads);
 
@@ -93,6 +93,7 @@ pub fn solve(
         }
         let output_channel = output_channel.clone();
         pool.execute(move || {
+            let start_time = SystemTime::now();
             for num in num..batch_end {
                 let result = shortcut(num);
             }
@@ -100,7 +101,8 @@ pub fn solve(
             output_channel.send(BatchSummary {
                 start: num,
                 end: batch_end,
-                duration: start_time.elapsed().expect("clock broken?"),
+                start_time: start_time,
+                end_time: SystemTime::now(),
             }).expect("channel broken!");
         });
         num = batch_end;
