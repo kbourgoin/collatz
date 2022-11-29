@@ -55,7 +55,7 @@ fn run(start: usize, end: usize, threads: usize) {
     let receiver_thread = thread::spawn(move || {
         receiver(rx);
     });
-    collatz::solve(collatz::shortcut, start, end, tx, threads);
+    collatz::solve(start, end, tx, threads);
     receiver_thread.join().unwrap();
 }
 

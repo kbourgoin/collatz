@@ -70,7 +70,6 @@ pub fn shortcut(num: usize) -> usize {
 /// Solver entry point
 #[allow(dead_code)]
 pub fn solve(
-    implementation: fn(usize) -> usize,
     start: usize,
     end: usize,
     output_channel: Sender<BatchSummary>,
@@ -96,7 +95,7 @@ pub fn solve(
         let output_channel = output_channel.clone();
         pool.execute(move || {
             for num in num..batch_end {
-                let result = implementation(num);
+                let result = shortcut(num);
             }
             // Send a completion summary to the output channel
             output_channel.send(BatchSummary {
