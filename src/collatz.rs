@@ -68,7 +68,6 @@ pub fn shortcut(num: usize) -> usize {
 }
 
 /// Solver entry point
-#[allow(dead_code)]
 pub fn solve(
     start: usize,
     end: usize,
@@ -101,8 +100,8 @@ pub fn solve(
             output_channel.send(BatchSummary {
                 start: num,
                 end: batch_end,
-                duration: start_time.elapsed().unwrap(),
-            });
+                duration: start_time.elapsed().expect("clock broken?"),
+            }).expect("channel broken!");
         });
         num = batch_end;
     }
