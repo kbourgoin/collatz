@@ -1,6 +1,6 @@
 extern crate test;
 
-use std::cmp::min;
+use std::cmp::{min, max};
 use std::sync::mpsc::Sender;
 use std::time::{Duration, SystemTime};
 use std::{thread, time};
@@ -13,6 +13,7 @@ pub struct BatchSummary {
     pub end: usize,
     pub start_time: SystemTime,
     pub end_time: SystemTime,
+    pub max_steps: usize,
 }
 
 /// Recursive implementation of Collatz. Returns number of iterations to reach 1.
@@ -87,9 +88,12 @@ pub fn solve(start: usize, end: usize, output_channel: Sender<BatchSummary>, thr
         };
         let output_channel = output_channel.clone();
         pool.execute(move || {
+            let mut max_steps = 0;
             let start_time = SystemTime::now();
             for num in batch_start..batch_end {
-                let result = shortcut(num);
+                // steps used it kind of interesting, but really i'm making sure
+                // the compiler doesn't make this function call disappear.
+                max_steps = max(max_steps, shortcut(num));
             }
             // Send a completion summary to the output channel
             output_channel
@@ -98,6 +102,7 @@ pub fn solve(start: usize, end: usize, output_channel: Sender<BatchSummary>, thr
                     end: batch_end,
                     start_time: start_time,
                     end_time: SystemTime::now(),
+                    max_steps: max_steps,
                 })
                 .expect("channel broken!");
         });

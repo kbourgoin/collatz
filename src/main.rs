@@ -1,6 +1,7 @@
 #![feature(test)]
 
 use clap::Parser;
+use std::cmp::{max};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
@@ -29,7 +30,8 @@ struct Args {
 fn receiver(rx: Receiver<collatz::BatchSummary>) {
     let mut solves = 0;
     let mut dur = Duration::new(0, 0);
-    println!("Total Solves\tOverall solves/ns\tBatch Duration\tBatch solves/ns");
+    let mut max_steps = 0;
+    println!("Total Solves\tOverall solves/s\tBatch Duration\tBatch solves/s\tMax steps to solve");
     loop {
         if let Result::Ok(summary) = rx.recv() {
             let batch_solves = summary.end - summary.start;
@@ -37,26 +39,28 @@ fn receiver(rx: Receiver<collatz::BatchSummary>) {
                 .end_time
                 .duration_since(summary.start_time)
                 .expect("invalid SystemTime");
-            let batch_rate = batch_solves as f32 / batch_dur.as_nanos() as f32;
+            let batch_rate = batch_solves as f32 / batch_dur.as_secs_f32();
 
             dur += batch_dur;
             solves += batch_solves;
-            let rate = solves as f32 / dur.as_nanos() as f32;
+            max_steps = max(summary.max_steps, max_steps);
+            let rate = solves as f32 / dur.as_secs_f32();
 
             println!(
-                "{}\t\t{:.2}\t\t\t{:?}\t\t{:.2}",
+                "{}\t\t{:.2e}\t\t\t{:?}\t\t{:.2e}\t\t{}",
                 solves.separate_with_commas(),
                 rate,
                 batch_dur,
-                batch_rate
+                batch_rate,
+                max_steps,
             );
         } else {
-            let rate = solves as f32 / dur.as_nanos() as f32;
+            let rate = solves as f32 / dur.as_secs_f32();
             println!(
-                "\n-----\nTotal Solves: {}\nDuration: {:?}\nSolves/ns: {:.3}",
+                "\n-----\nTotal Solves: {}\nProcessing Time: {:?}\nSolves/s: {}",
                 solves.separate_with_commas(),
                 dur,
-                rate
+                rate.separate_with_commas(),
             );
             return;
         }
