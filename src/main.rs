@@ -5,6 +5,7 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::{Duration, SystemTime};
+use thousands::Separable;
 
 mod collatz;
 
@@ -28,6 +29,7 @@ struct Args {
 fn receiver(rx: Receiver<collatz::BatchSummary>) {
     let mut solves = 0;
     let mut dur = Duration::new(0, 0);
+    println!("Total Solves\tOverall solves/ns\tBatch Duration\tBatch solves/ns");
     loop {
         if let Result::Ok(summary) = rx.recv() {
             let batch_solves = summary.end - summary.start;
@@ -42,22 +44,20 @@ fn receiver(rx: Receiver<collatz::BatchSummary>) {
             let rate = solves as f32 / dur.as_nanos() as f32;
 
             println!(
-                "{}\t{:?}\t{:?}\t{:?}\t{:?}",
-                batch_solves, batch_dur, batch_rate, solves, rate
+                "{}\t\t{:.2}\t\t\t{:?}\t\t{:.2}",
+                solves.separate_with_commas(),
+                rate,
+                batch_dur,
+                batch_rate
             );
-            /*
-            let solved = num + 1 - start;
-            if solved % 20_000_000 == 0 {
-                println!("{:e}: {}", num, result);
-                // output_channel.send((num, result)).unwrap();
-                println!(
-                    "Solved {} in {}ms ({:.3} solves/s)",
-                    solved,
-                    duration,
-                    solved as f32 / duration as f32
-                );
-            */
         } else {
+            let rate = solves as f32 / dur.as_nanos() as f32;
+            println!(
+                "\n-----\nTotal Solves: {}\nDuration: {:?}\nSolves/ns: {:.3}",
+                solves.separate_with_commas(),
+                dur,
+                rate
+            );
             return;
         }
     }
