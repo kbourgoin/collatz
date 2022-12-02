@@ -127,7 +127,7 @@ pub fn solve(
             for num in batch_start..batch_end {
                 // steps used it kind of interesting, but really i'm making sure
                 // the compiler doesn't make this function call disappear.
-                max_steps = max(max_steps, shortcut(num));
+                max_steps = max(max_steps, faster_shortcut(num));
             }
             // Send a completion summary to the output channel
             output_channel
