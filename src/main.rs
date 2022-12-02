@@ -1,11 +1,11 @@
 #![feature(test)]
 
 use clap::Parser;
-use std::cmp::{max};
+use std::cmp::max;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use std::time::{Duration};
+use std::time::Duration;
 use thousands::Separable;
 
 mod collatz;
@@ -21,8 +21,11 @@ struct Args {
     /// Run for i numbers (0 runs forever)
     #[clap(short, long, default_value_t = 0)]
     count: usize,
+    /// How big a batch to send to each thread
+    #[clap(short, long, default_value_t = 1_000_000)]
+    batch_size: usize,
     /// How many threads to use
-    #[clap(short, long, default_value_t = 1)]
+    #[clap(short, long, default_value_t = num_cpus::get())]
     threads: usize,
 }
 
@@ -68,7 +71,7 @@ fn receiver(rx: Receiver<collatz::BatchSummary>) {
 }
 
 /// Run 3x+1 on start..end and print the results
-fn run(start: usize, end: usize, threads: usize) {
+fn run(start: usize, end: usize, batch_size: usize, threads: usize) {
     let (tx, rx): (
         Sender<collatz::BatchSummary>,
         Receiver<collatz::BatchSummary>,
@@ -76,7 +79,7 @@ fn run(start: usize, end: usize, threads: usize) {
     let receiver_thread = thread::spawn(move || {
         receiver(rx);
     });
-    collatz::solve(start, end, tx, threads);
+    collatz::solve(start, end, tx, batch_size, threads);
     receiver_thread.join().unwrap();
 }
 
@@ -106,5 +109,5 @@ fn main() {
         0 => 0,
         _ => args.start + args.count,
     };
-    run(args.start, end, args.threads);
+    run(args.start, end, args.batch_size, args.threads);
 }

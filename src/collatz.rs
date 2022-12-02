@@ -100,21 +100,25 @@ pub fn faster_shortcut(num: usize) -> usize {
 }
 
 /// Solver entry point
-pub fn solve(start: usize, end: usize, output_channel: Sender<BatchSummary>, threads: usize) {
+pub fn solve(
+    start: usize,
+    end: usize,
+    output_channel: Sender<BatchSummary>,
+    batch_size: usize,
+    threads: usize,
+) {
     let mut batch_start = start;
     let pool = ThreadPool::new(threads);
 
-    const BATCH_SIZE: usize = 1000;
-
     while end == 0 || batch_start < end {
-        // Don't fill memory with waiting jobs.
-        while pool.queued_count() > threads * 5000 {
+        // If running forever, don't fill memory with waiting jobs.
+        while end == 0 && pool.queued_count() > threads * 5000 {
             thread::sleep(time::Duration::from_millis(500));
         }
 
         let batch_end = match end {
-            0 => batch_start + BATCH_SIZE,
-            _ => min(batch_start + BATCH_SIZE, end),
+            0 => batch_start + batch_size,
+            _ => min(batch_start + batch_size, end),
         };
         let output_channel = output_channel.clone();
         pool.execute(move || {
@@ -282,7 +286,8 @@ mod tests {
     fn test_solve_performance(start: usize, end: usize, b: &mut Bencher) {
         b.iter(|| {
             let (tx, rx): (Sender<BatchSummary>, Receiver<BatchSummary>) = mpsc::channel();
-            solve(start, end, tx, 4)
+            // Smaller batch size than the default so that we're sure to actually use multiple threads
+            solve(start, end, tx, 1000, 4)
         });
     }
 
