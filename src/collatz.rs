@@ -285,7 +285,7 @@ mod tests {
 
     fn test_solve_performance(start: usize, end: usize, b: &mut Bencher) {
         b.iter(|| {
-            let (tx, rx): (Sender<BatchSummary>, Receiver<BatchSummary>) = mpsc::channel();
+            let (tx, _): (Sender<BatchSummary>, Receiver<BatchSummary>) = mpsc::channel();
             // Smaller batch size than the default so that we're sure to actually use multiple threads
             solve(start, end, tx, 1000, 4)
         });
