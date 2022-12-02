@@ -5,7 +5,7 @@ use std::cmp::{max};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration};
 use thousands::Separable;
 
 mod collatz;

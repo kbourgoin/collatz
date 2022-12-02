@@ -1,8 +1,8 @@
 extern crate test;
 
-use std::cmp::{min, max};
+use std::cmp::{max, min};
 use std::sync::mpsc::Sender;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 use std::{thread, time};
 use threadpool::ThreadPool;
 
