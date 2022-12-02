@@ -69,6 +69,36 @@ pub fn shortcut(num: usize) -> usize {
     return count;
 }
 
+/// A faster version of the shortcut implementation
+///
+/// This implementation takes another shortcut. In this programs, we're
+/// solving numbers sequentially. When solving N, we know that
+/// solutions for numbers less than N have already been solved. Therefore,
+/// if the algorithm returns a number less than N, we can exit as we know
+/// that number has already been solved.
+///
+/// This messes up the `count` variable beyond recognition. It is kept
+/// to keep the function signature the same, and ensure the compiler
+/// doesn't get ahead of itself and optimize the function out of existence.
+#[allow(dead_code)]
+pub fn faster_shortcut(num: usize) -> usize {
+    // Special case for this implementation. Can't get to < 1.
+    if num == 1 {
+        return 1;
+    }
+    let mut count: usize = 0;
+    let mut curr_num = num;
+    while curr_num >= num {
+        if curr_num % 2 == 0 {
+            curr_num = curr_num / 2;
+        } else {
+            curr_num = (curr_num * 3 + 1) / 2;
+        }
+        count += 1;
+    }
+    return count;
+}
+
 /// Solver entry point
 pub fn solve(start: usize, end: usize, output_channel: Sender<BatchSummary>, threads: usize) {
     let mut batch_start = start;
@@ -226,6 +256,27 @@ mod tests {
     fn bench_shortcut_big(b: &mut Bencher) {
         let start = 1_000_000_000;
         b.iter(|| test_performance(shortcut, start, start + TEST_SIZE));
+    }
+
+    /// Faster shortcut impl benchmark starting at 1
+    #[bench]
+    fn bench_faster_shortcut_small(b: &mut Bencher) {
+        let start = 1;
+        b.iter(|| test_performance(faster_shortcut, start, start + TEST_SIZE));
+    }
+
+    /// Faster shortcut impl benchmark starting at 1,000,000
+    #[bench]
+    fn bench_faster_shortcut_mid(b: &mut Bencher) {
+        let start = 1_000_000;
+        b.iter(|| test_performance(faster_shortcut, start, start + TEST_SIZE));
+    }
+
+    /// Faster shortcut impl benchmark starting at 1,000,000,000
+    #[bench]
+    fn bench_faster_shortcut_big(b: &mut Bencher) {
+        let start = 1_000_000_000;
+        b.iter(|| test_performance(faster_shortcut, start, start + TEST_SIZE));
     }
 
     fn test_solve_performance(start: usize, end: usize, b: &mut Bencher) {
