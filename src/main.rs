@@ -22,7 +22,7 @@ struct Args {
     #[clap(short, long, default_value_t = 0)]
     count: usize,
     /// How big a batch to send to each thread
-    #[clap(short, long, default_value_t = 1_000_000)]
+    #[clap(short, long, default_value_t = 10_000_000)]
     batch_size: usize,
     /// How many threads to use
     #[clap(short, long, default_value_t = num_cpus::get())]
