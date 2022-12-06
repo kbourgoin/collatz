@@ -70,15 +70,16 @@ pub fn faster_shortcut(num: usize) -> usize {
     if num == 1 {
         return 1;
     }
+    let mut count = 0;
     let mut num = num;
     let starting_num = num;
     while num >= starting_num {
-        num = match num {
-            num if num % 2 == 0 => num / 2,
-            _ => (3 * num + 1) / 2,
+        (num, count) = match num {
+            num if num % 2 == 0 => (num / 2, count + 1),
+            _ => ((3 * num + 1) / 2, count + 2),
         };
     }
-    return true as usize;
+    return count as usize;
 }
 
 /// Solver entry point
@@ -141,42 +142,47 @@ pub fn solve(
 mod tests {
     use super::*;
 
-    static SOLVES: &'static [usize] = &[
+    static ANSWERS: &'static [usize] = &[
         0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7, 7, 15, 15, 10, 23, 10,
         111, 18, 18, 18, 106, 5, 26, 13, 13, 21, 21, 21, 34, 8, 109, 8, 29, 16, 16, 16, 104, 11,
         24, 24, 24, 11, 11, 112, 112, 19, 32, 19, 32, 19, 19, 107, 107, 6, 27, 27, 27, 14, 14, 14,
         102, 22,
     ];
 
-    fn test_is_correct(f: fn(usize) -> usize) {
-        for i in 0..SOLVES.len() {
+    // Generated test data from running faster implementation. Ensures answers don't change, but
+    // isn't validated to be correct.
+    static FASTER_ANSWERS: &'static [usize] = &[
+        1, 1, 6, 1, 3, 1, 11, 1, 3, 1, 8, 1, 3, 1, 11, 1, 3, 1, 6, 1, 3, 1, 8, 1, 3, 1, 96, 1, 3,
+        1, 91, 1, 3, 1, 6, 1, 3, 1, 13, 1, 3, 1, 8, 1, 3, 1, 88, 1, 3, 1, 6, 1, 3, 1, 8, 1, 3, 1,
+        11, 1, 3, 1, 88, 1, 3, 1, 6, 1, 3, 1, 83, 1, 3, 1, 8, 1, 3, 1, 13, 1, 3, 1, 6, 1, 3, 1, 8,
+        1, 3, 1, 73, 1, 3, 1, 13, 1, 3, 1, 6, 1,
+    ];
+
+    fn test_is_correct(f: fn(usize) -> usize, answers: &'static [usize]) {
+        for i in 0..answers.len() {
             let res = f(i + 1);
-            assert_eq!(res, SOLVES[i])
+            assert_eq!(res, answers[i])
         }
     }
 
     #[test]
     fn test_recursive() {
-        test_is_correct(recursive);
+        test_is_correct(recursive, ANSWERS);
     }
 
     #[test]
     fn test_naive() {
-        test_is_correct(naive);
+        test_is_correct(naive, ANSWERS);
     }
 
     #[test]
     fn test_shortcut() {
-        test_is_correct(shortcut);
+        test_is_correct(shortcut, ANSWERS);
     }
 
     #[test]
     fn test_faster_shortcut() {
-        // There is no authortative answer for this one, so check it runs and
-        // resolves to 1.
-        for i in 1..=100 {
-            assert_eq!(faster_shortcut(i), 1)
-        }
+        test_is_correct(faster_shortcut, FASTER_ANSWERS);
     }
 
     #[test]
