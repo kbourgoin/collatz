@@ -5,6 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "collatz"
+path = "src/collatz.rs"
+crate-type = ["lib"]
+
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 threadpool = "1.8.1"

@@ -8,7 +8,7 @@ use std::thread;
 use std::time::Duration;
 use thousands::Separable;
 
-mod collatz;
+pub mod collatz;
 
 // TODO: Fix 0 as a magic number to run forever
 
