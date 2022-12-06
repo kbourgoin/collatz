@@ -20,20 +20,13 @@ pub struct BatchSummary {
 #[allow(dead_code)]
 pub fn recursive(num: usize) -> usize {
     fn _recurse(num: usize, count: usize) -> (usize, usize) {
-        if num == 1 {
-            return (num, count);
+        match num {
+            1 => (num, count),
+            x if x % 2 == 0 => _recurse(num / 2, count + 1),
+            _ => _recurse(3 * num + 1, count + 1),
         }
-        // println!("{}", num);
-        let new_num;
-        if num % 2 == 0 {
-            new_num = num / 2;
-        } else {
-            new_num = 3 * num + 1;
-        }
-        return _recurse(new_num, count + 1);
     }
-    let (_, count) = _recurse(num, 0);
-    count
+    _recurse(num, 0).1
 }
 
 /// Non-recursive implementation of Collatz
