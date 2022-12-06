@@ -45,18 +45,14 @@ pub fn naive(num: usize) -> usize {
 /// Shortcut implementation of Collatz
 #[allow(dead_code)]
 pub fn shortcut(num: usize) -> usize {
-    let mut count: usize = 0;
-    let mut num = num;
+    let (mut num, mut count) = (num, 0);
     while num != 1 {
-        if num % 2 == 0 {
-            num = num / 2;
-        } else {
-            num = (num * 3 + 1) / 2;
-            count += 1; // accounts for the skipped step
-        }
-        count += 1;
+        (num, count) = match num {
+            num if num % 2 == 0 => (num / 2, count + 1),
+            _ => ((3 * num + 1) / 2, count + 2), // +2 accounts for skipped step
+        };
     }
-    return count;
+    count
 }
 
 /// A faster version of the shortcut implementation
