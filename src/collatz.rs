@@ -72,17 +72,15 @@ pub fn faster_shortcut(num: usize) -> usize {
     if num == 1 {
         return 1;
     }
-    let mut count: usize = 0;
-    let mut curr_num = num;
-    while curr_num >= num {
-        if curr_num % 2 == 0 {
-            curr_num = curr_num / 2;
-        } else {
-            curr_num = (curr_num * 3 + 1) / 2;
-        }
-        count += 1;
+    let mut num = num;
+    let starting_num = num;
+    while num >= starting_num {
+        num = match num {
+            num if num % 2 == 0 => num / 2,
+            _ => (3 * num + 1) / 2,
+        };
     }
-    return count;
+    return true as usize;
 }
 
 /// Solver entry point
@@ -246,6 +244,15 @@ mod tests {
     fn bench_shortcut_big(b: &mut Bencher) {
         let start = 1_000_000_000;
         b.iter(|| test_performance(shortcut, start, start + TEST_SIZE));
+    }
+
+    #[test]
+    fn test_faster_shortcut() {
+        // There is no authortative answer for this one, so check it runs and
+        // resolves to 1.
+        for i in 1..=100 {
+            assert_eq!(faster_shortcut(i), 1)
+        }
     }
 
     /// Faster shortcut impl benchmark starting at 1
