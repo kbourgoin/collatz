@@ -22,7 +22,7 @@ pub fn recursive(num: usize) -> usize {
     fn _recurse(num: usize, count: usize) -> (usize, usize) {
         match num {
             1 => (num, count),
-            x if x % 2 == 0 => _recurse(num / 2, count + 1),
+            num if num % 2 == 0 => _recurse(num / 2, count + 1),
             _ => _recurse(3 * num + 1, count + 1),
         }
     }
@@ -32,17 +32,14 @@ pub fn recursive(num: usize) -> usize {
 /// Non-recursive implementation of Collatz
 #[allow(dead_code)]
 pub fn naive(num: usize) -> usize {
-    let mut count: usize = 0;
-    let mut num = num;
+    let (mut num, mut count) = (num, 0);
     while num != 1 {
-        if num % 2 == 0 {
-            num = num / 2;
-        } else {
-            num = num * 3 + 1;
-        }
-        count += 1;
+        (num, count) = match num {
+            num if num % 2 == 0 => (num / 2, count + 1),
+            _ => (3 * num + 1, count + 1),
+        };
     }
-    return count;
+    count
 }
 
 /// Shortcut implementation of Collatz
