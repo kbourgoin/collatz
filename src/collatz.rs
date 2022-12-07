@@ -108,7 +108,7 @@ pub fn solve(
             let mut max_steps = 0;
             let start_time = SystemTime::now();
             for num in batch_start..batch_end {
-                // steps used it kind of interesting, but really i'm making sure
+                // max steps is kind of interesting, but really i'm making sure
                 // the compiler doesn't make this function call disappear.
                 max_steps = max(max_steps, faster_shortcut(num));
             }
@@ -117,30 +117,22 @@ pub fn solve(
                 .send(BatchSummary {
                     start: batch_start,
                     end: batch_end,
-                    start_time: start_time,
+                    start_time,
                     end_time: SystemTime::now(),
-                    max_steps: max_steps,
+                    max_steps,
                 })
                 .expect("channel broken!");
         });
         batch_start = batch_end;
     }
     pool.join();
-    /*
-    let duration = start_time.elapsed().unwrap().as_millis();
-    let solved = num - start;
-    println!(
-        "Solved {} in {}ms ({:.3} solves/s)",
-        solved,
-        duration,
-        solved as f32 / duration as f32
-    );
-    */
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::mpsc;
+    use std::sync::mpsc::{Receiver, Sender};
 
     static ANSWERS: &'static [usize] = &[
         0, 1, 7, 2, 5, 8, 16, 3, 19, 6, 14, 9, 9, 17, 17, 4, 12, 20, 20, 7, 7, 15, 15, 10, 23, 10,
@@ -186,5 +178,12 @@ mod tests {
     }
 
     #[test]
-    fn test_solve() {}
+    fn test_solve() {
+        let (tx, rx): (Sender<BatchSummary>, Receiver<BatchSummary>) = mpsc::channel();
+        solve(1, 100, tx, 10, 4);
+        let tmp: Vec<BatchSummary> = rx.iter().collect();
+
+        // For now, just be sure all 10 batches came out the other side
+        assert_eq!(tmp.len(), 10);
+    }
 }
