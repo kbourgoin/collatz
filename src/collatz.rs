@@ -81,6 +81,25 @@ pub fn faster_shortcut(num: usize) -> usize {
     count
 }
 
+/// Implementation based on https://en.wikipedia.org/wiki/Collatz_conjecture#As_an_abstract_machine_that_computes_in_base_two
+#[allow(dead_code)]
+pub fn bitwise(num: usize) -> usize {
+    if num == 1 {
+        return 1;
+    }
+    let mut count = 0;
+    let mut curr_num = num;
+    while curr_num >= num {
+        curr_num = match curr_num % 2 {
+            1 => (3 * curr_num + 1) / 2,
+            0 => curr_num >> curr_num.trailing_zeros(),
+            _ => panic!("at the disco"),
+        };
+        count += 1;
+    }
+    count
+}
+
 /// Solver that doesn't use batching.
 ///
 /// Kept around to demonstrate a simpler threadpool implementation.
@@ -187,6 +206,11 @@ mod tests {
     #[test]
     fn test_faster_shortcut() {
         test_is_correct(faster_shortcut, FASTER_ANSWERS);
+    }
+
+    #[test]
+    fn test_bitwise() {
+        test_is_correct(bitwise, FASTER_ANSWERS);
     }
 
     #[test]
