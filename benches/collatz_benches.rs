@@ -3,7 +3,7 @@
 extern crate collatz;
 extern crate test;
 
-use collatz::{faster_shortcut, BatchSummary};
+use collatz::{bitwise, faster_shortcut, BatchSummary};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use test::Bencher;
@@ -11,8 +11,8 @@ use test::Bencher;
 static TEST_SIZE: usize = 5_000;
 
 fn test_performance(f: fn(usize) -> usize, start: usize, end: usize) {
-    // The "faster" method can skip even numbers.
-    if f == faster_shortcut {
+    // The "faster" method can skip even numbers since those can't start a cycle.
+    if f == faster_shortcut || f == bitwise {
         let mut nums = start..end;
         if start % 2 == 0 {
             nums.next();
@@ -109,6 +109,27 @@ fn bench_faster_shortcut_mid(b: &mut Bencher) {
 fn bench_faster_shortcut_big(b: &mut Bencher) {
     let start = 1_000_000_000;
     b.iter(|| test_performance(collatz::faster_shortcut, start, start + TEST_SIZE));
+}
+
+/// Faster shortcut impl benchmark starting at 1
+#[bench]
+fn bench_bitwise_small(b: &mut Bencher) {
+    let start = 1;
+    b.iter(|| test_performance(collatz::bitwise, start, start + TEST_SIZE));
+}
+
+/// Faster shortcut impl benchmark starting at 1,000,000
+#[bench]
+fn bench_bitwise_mid(b: &mut Bencher) {
+    let start = 1_000_000;
+    b.iter(|| test_performance(collatz::bitwise, start, start + TEST_SIZE));
+}
+
+/// Faster shortcut impl benchmark starting at 1,000,000,000
+#[bench]
+fn bench_bitwise_big(b: &mut Bencher) {
+    let start = 1_000_000_000;
+    b.iter(|| test_performance(collatz::bitwise, start, start + TEST_SIZE));
 }
 
 fn test_solve_performance(start: usize, end: usize, b: &mut Bencher) {
