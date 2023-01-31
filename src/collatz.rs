@@ -65,17 +65,17 @@ pub fn shortcut(num: usize) -> usize {
 /// to keep the function signature the same, and ensure the compiler
 /// doesn't get ahead of itself and optimize the function out of existence.
 #[allow(dead_code)]
-pub fn faster_shortcut(mut num: usize) -> usize {
+pub fn faster_shortcut(num: usize) -> usize {
     // Special case: can't get to < 1.
     if num == 1 {
         return 1;
     }
     let mut count = 0;
-    let initial_num = num;
-    while num >= initial_num {
-        (num, count) = match num {
-            num if num % 2 == 0 => (num / 2, count + 1),
-            _ => ((3 * num + 1) / 2, count + 2),
+    let mut curr_num = num;
+    while curr_num >= num {
+        (curr_num, count) = match curr_num {
+            curr_num if curr_num % 2 == 0 => (curr_num / 2, count + 1),
+            _ => ((3 * curr_num + 1) / 2, count + 2),
         };
     }
     count
