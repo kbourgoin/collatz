@@ -11,7 +11,8 @@ use test::Bencher;
 static TEST_SIZE: usize = 5_000;
 
 fn test_performance(f: fn(usize) -> usize, start: usize, end: usize) {
-    // The "faster" method can skip even numbers since those can't start a cycle.
+    // For some methods, skip even numbers. They can't start a cycle anyway.
+    // TODO: build this into the methods instead of leaving here?
     if f == faster_shortcut || f == bitwise {
         let mut nums = start..end;
         if start % 2 == 0 {
