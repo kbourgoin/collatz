@@ -11,4 +11,8 @@ path = "src/collatz.rs"
 crate-type = ["lib"]
 
 [dependencies]
+clap = { version = "4.0", features = ["derive"] }
 threadpool = "1.8.1"
+thousands = "0.2.0"
+num_cpus = "1.14.0"
+log = "0.4"
