@@ -87,8 +87,9 @@ pub fn bitwise(num: usize) -> usize {
     if num == 1 {
         return 1;
     }
+    let num = num as u128;
     let mut count = 0;
-    let mut curr_num = num;
+    let mut curr_num: u128 = num;
     while curr_num >= num {
         curr_num = match curr_num % 2 {
             1 => (3 * curr_num + 1) / 2,

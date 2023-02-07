@@ -1,6 +1,7 @@
 #![feature(test)]
 
-use clap::Parser;
+use clap::error::ErrorKind;
+use clap::{CommandFactory, Parser};
 use std::cmp::max;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -16,15 +17,32 @@ struct Args {
     /// Start running at N
     #[clap(short, long, default_value_t = 1)]
     start: usize,
-    /// Run for i numbers (0 runs forever)
+    /// Where to end (0 runs forever)
     #[clap(short, long, default_value_t = 0)]
-    count: usize,
-    /// How big a batch to send to each thread
-    #[clap(short, long, default_value_t = 10_000_000)]
-    batch_size: usize,
+    end: usize,
+    /// Override default batch size of `num_to_solve / (threads*2) `
+    #[clap(short, long)]
+    batch_override: Option<usize>,
     /// How many threads to use
     #[clap(short, long, default_value_t = num_cpus::get())]
     threads: usize,
+}
+
+impl Args {
+    /// Batch size is computed after args are validated because it may be overridden.
+    // It's a bit ugly here, but expedient because Clap derive uses everything in the struct
+    pub fn batch_size(&self) -> usize {
+        match self.batch_override {
+            Some(size) => size,
+            None => {
+                match self.end {
+                    // For infinite runs, use a pretty-good default
+                    0 => 200_000_000,
+                    _ => (self.end - self.start) / (self.threads * 2),
+                }
+            }
+        }
+    }
 }
 
 /// Print progressive solve times and status
@@ -32,17 +50,10 @@ fn receiver(rx: Receiver<collatz::BatchSummary>) {
     let mut solves = 0;
     let mut dur = Duration::new(0, 0);
     let mut max_steps = 0;
-    let mut msg_num = 0;
     println!("Total Solves\tOverall solves/s\tBatch Duration\tBatch solves/s\tMax steps to solve");
     loop {
         if let Result::Ok(summary) = rx.recv() {
-            // Only print every 20th message or it's too noisy.
-            msg_num += 1;
-            if msg_num % 20 != 0 {
-                continue;
-            }
-
-            /// Print out some stats about the batch
+            // Print out some stats about the batch
             let batch_solves = summary.end - summary.start;
             let batch_dur = summary
                 .end_time
@@ -90,49 +101,57 @@ fn run(start: usize, end: usize, batch_size: usize, threads: usize) {
     receiver_thread.join().unwrap();
 }
 
-fn main() {
+/// Parse/validate arguments and handle any that are computed at runtime
+fn get_args() -> Args {
     let args = Args::parse();
 
-    // Print message about what's about to go down
-    let end_msg: String;
-    if args.count == 0 {
-        end_msg = "∞".to_string();
-    } else {
-        end_msg = format!("{}", (args.start + args.count).separate_with_commas());
+    // Ensure end == 0 || end > start
+    if args.end > 0 && args.end < args.start {
+        let mut cmd = Args::command();
+        cmd.error(
+            ErrorKind::ArgumentConflict,
+            "`end` must be 0 or greater than start",
+        )
+        .exit();
     }
+    args
+}
 
+fn main() {
+    let args = get_args();
+
+    // Print message about what's about to go down
     println!(
-        "Run starting:\n  \
+        "Running with settings:\n  \
         - start: {}\n  \
         - end: {}\n  \
         - batch size: {}\n  \
         - threads: {}\n",
         args.start.separate_with_commas(),
-        end_msg,
-        args.batch_size.separate_with_commas(),
+        match args.end {
+            0 => String::from("∞"),
+            _ => args.end.separate_with_commas(),
+        },
+        args.batch_size().separate_with_commas(),
         args.threads,
     );
 
-    let end = match args.count {
-        0 => 0,
-        _ => args.start + args.count,
-    };
-
     // Run the thing
-    if end == 0 {
-        // Run forever by solving 1,000 batches at a time
+    if args.end == 0 {
+        // Run forever by calling `run` repeatedly`
+        let step_size = 20_000_000_000;
         let mut start = args.start;
-        let mut end = start + args.batch_size * 1_000;
+        let mut end = start + step_size;
         loop {
             print!(
                 "Starting infini-batch [{:.2e}, {:.2e}]\n-----\n\n",
                 start, end
             );
-            run(start, end, args.batch_size, args.threads);
+            run(start, end, args.batch_size(), args.threads);
             start = end;
-            end = start + args.batch_size * 1_000;
+            end = start + step_size;
         }
     } else {
-        run(args.start, end, args.batch_size, args.threads);
+        run(args.start, args.end, args.batch_size(), args.threads);
     }
 }
